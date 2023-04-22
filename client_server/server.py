@@ -18,6 +18,9 @@ users = {}
 
 # return the client_id of a socket or None
 def find_client_id(client_sock):
+    for client_id in users:
+        if users[client_id]["socket"] == client_sock:
+            return client_id
     return None
 
 
@@ -76,8 +79,8 @@ def generate_result(list_values):
         else:
             return maximal, ["max"]
     elif choice == 4:
-        listsort = list_values.sort()
-        median = listsort[len(listsort) // 2]
+        list_values.sort()
+        median = list_values[len(list_values) // 2]
         if median == first:
             return first, ["median", "first"]
         elif median == last:
@@ -136,7 +139,14 @@ def new_msg(client_sock):
 # process the client in the dictionary
 # return response message with or without error message
 def new_client(client_sock, request):
-    return None
+    client_id = request["client_id"]
+    if client_id in users:
+        response = {"op": "START", "status": False, "error": "Client already exists"}
+    else:
+        users[client_id] = {"socket": client_sock, "numbers": [], "guesses": []}
+        response = {"op": "START", "status": True}
+    update_file(client_id, 0, "START")
+    return response
 
 
 #
@@ -145,7 +155,7 @@ def new_client(client_sock, request):
 # obtain the client_id from his socket and delete from the dictionary
 def clean_client(client_sock):
     client_id = find_client_id(client_sock)
-    if client_id != None:
+    if client_id is not None:
         print("Client %s removed\n" % client_id)
         del users[client_id]
 
@@ -159,7 +169,14 @@ def clean_client(client_sock):
 # eliminate client from dictionary using the function clean_client
 # return response message with or without error message
 def quit_client(client_sock, request):
-    return None
+    client_id = find_client_id(client_sock)
+    if client_id is None:
+        response = {"op": "QUIT", "status": False, "error": "Client does not exist"}
+    else:
+        update_file(client_id, len(users[client_id]["guesses"]), "QUIT")
+        clean_client(client_sock)
+        response = {"op": "QUIT", "status": True}
+    return response
 
 
 #
@@ -188,7 +205,14 @@ def update_file(client_id, size, guess):
 # verify the appropriate conditions for executing this operation
 # return response message with or without error message
 def number_client(client_sock, request):
-    return None
+    client_id = find_client_id(client_sock)
+    if client_id is None:
+        response = {"op": "NUMBER", "status": False, "error": "Client does not exist"}
+    else:
+        num = request["number"]
+        users[client_id]["numbers"].append(num)
+        response = {"op": "NUMBER", "status": True}
+    return response
 
 
 #
