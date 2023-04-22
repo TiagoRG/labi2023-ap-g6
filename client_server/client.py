@@ -67,8 +67,9 @@ def returnValidNum():
             break
     return num
 
+
 # verify if port is valid
-def verifyPort(port):
+def verifyPort():
     return 1024 <= port <= 65535
 
 
@@ -178,7 +179,7 @@ def main():
     # verify type of arguments and eventually print error message and exit with error
 
     global hostname, port
-    if sys.argv not in [3, 4]:
+    if len(sys.argv) not in [3, 4]:
         print("Usage python3 client.py client_id porto [máquina](opcional)")
         sys.exit(1)
 
@@ -199,7 +200,7 @@ def main():
         if len(hostname) != 4:
             print("Invalid ip")
             sys.exit(1)
-        if not verifyPort(port):
+        if not verifyPort():
             print("Port must be between 1024 and 65535")
             sys.exit(1)
 
@@ -216,7 +217,7 @@ def main():
         except ValueError:
             print("Invalid args")
             sys.exit(1)
-        if not verifyPort(port):
+        if not verifyPort():
             print("Port must be between 1024 and 65535")
             sys.exit(1)
 
