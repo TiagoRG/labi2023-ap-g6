@@ -147,15 +147,13 @@ def run_client(client_sock, client_id):
             print("Número escolhido: ", recvdata["value"])
 
         elif option.upper() == "GUESS":
-            choices = ["min", "max", "first", "last", "median"]
+            # choices = ["min", "max", "first", "last", "median"]
 
             # get min, max, first, last, median
-            for i in choices:
-                print(i, " ?")
-                choices[choices.index(i)] = returnValidNum()
+            choice = input("Escolha um ou mais:\nmin, max, first, last, median\nEscolhas múltiplas separadas por ',' sem espaços.\n\nEscolha? ").split(',')
 
             # send dict
-            senddata = {"op": "STOP", "choice": " / ".join(choices)}
+            senddata = {"op": "GUESS", "choice": choice}
             client_sock.send_dict(senddata)
 
             # receive dict
