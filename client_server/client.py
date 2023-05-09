@@ -33,7 +33,20 @@ def validate_response(client_sock, response):
 
 # process QUIT operation
 def quit_action(client_sock, attempts):
-    return None
+    senddata = {"op": "QUIT"}
+    client_sock.send_dict(senddata)
+
+    # receive dict
+    recvdata = client_sock.recv_dict()
+    # status = False
+    if not recvdata["status"]:
+        print(recvdata["error"])
+        client_sock.close()
+
+    # status = True
+    print("Número de tentativas: ", attempts)
+    print("Client removed with success")
+    client_sock.close()
 
 
 # Outcomming message structure:
@@ -74,6 +87,7 @@ def verifyPort():
 
 
 def run_client(client_sock, client_id):
+    attempts = 0
     while 1:
         option = input("Operation? (START, QUIT, NUMBER, STOP, GUESS)")
 
@@ -94,26 +108,9 @@ def run_client(client_sock, client_id):
             print("Added client with success")
 
         elif option.upper() == "QUIT":
-            # send dict
-            senddata = {"op": "QUIT"}
-            client_sock.send_dict(senddata)
-
-            # receive dict
-            recvdata = client_sock.recv_dict()
-            # status = False
-            if not recvdata["status"]:
-                print(recvdata["error"])
-                client_sock.close()
-                continue
-
-            # status = True
-            print("Client removed with success")
-            client_sock.close()
-            break
+            quit_action(client_sock, attempts)
 
         elif option.upper() == "NUMBER":
-            num = 0
-
             # verify if number is int
             num = returnValidNum()
 
@@ -150,12 +147,15 @@ def run_client(client_sock, client_id):
             choices = ["min", "max", "first", "last", "median"]
 
             # get min, max, first, last, median
-            for i in choices:
-                print(i, " ?")
-                choices[choices.index(i)] = returnValidNum()
+            print("Escolha um ou mais: [ min, max, first, last, median ]\nEscolhas múltiplas separadas por ',' sem espaços.\n")
+            while True:
+                choice = input("Escolha? ").split(',')
+                if all([c in choices for c in choice]):
+                    attempts += 1
+                    break
 
             # send dict
-            senddata = {"op": "STOP", "choice": " / ".join(choices)}
+            senddata = {"op": "GUESS", "choice": choice}
             client_sock.send_dict(senddata)
 
             # receive dict
@@ -168,6 +168,7 @@ def run_client(client_sock, client_id):
             # status = True
             if recvdata["result"]:
                 print("Acertou!")
+                quit_action(client_sock, attempts)
             else:
                 print("Errou!")
 
