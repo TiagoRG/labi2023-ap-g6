@@ -34,7 +34,7 @@ def validate_response(client_sock, response):
 # process QUIT operation
 def quit_action(client_sock, attempts):
     senddata = {"op": "QUIT"}
-    client_sock.send_dict(senddata)
+    send_dict(client_sock, senddata)
 
     # receive dict
     recvdata = client_sock.recv_dict()
@@ -89,15 +89,15 @@ def verifyPort():
 def run_client(client_sock, client_id):
     attempts = 0
     while 1:
-        option = input("Operation? (START, QUIT, NUMBER, STOP, GUESS)")
+        option = input("Operation? (START, QUIT, NUMBER, STOP, GUESS)\n> ")
 
         if option.upper() == "START":
             # send dict
             senddata = {"op": "START", "client_id": client_id}
-            client_sock.send_dict(senddata)
+            send_dict(client_sock, senddata)
 
             # receive dict
-            recvdata = client_sock.recv_dict()
+            recvdata = recv_dict(client_sock)
             # status = False
             if not recvdata["status"]:
                 print(recvdata["error"])
@@ -105,10 +105,11 @@ def run_client(client_sock, client_id):
                 continue
 
             # status = True
-            print("Added client with success")
+            print("Added client with success\n")
 
         elif option.upper() == "QUIT":
             quit_action(client_sock, attempts)
+            exit(0)
 
         elif option.upper() == "NUMBER":
             # verify if number is int
@@ -116,25 +117,25 @@ def run_client(client_sock, client_id):
 
             # send dict
             senddata = {"op": "NUMBER", "number": num}
-            client_sock.send_dict(senddata)
+            send_dict(client_sock, senddata)
 
             # receive dict
-            recvdata = client_sock.recv_dict()
+            recvdata = recv_dict(client_sock)
             # status = False
             if not recvdata["status"]:
                 print(recvdata["error"])
                 client_sock.close()
                 continue
             # status = True
-            print("Added number with success")
+            print("Added number with success\n")
 
         elif option.upper() == "STOP":
             # send dict
             senddata = {"op": "STOP"}
-            client_sock.send_dict(senddata)
+            send_dict(client_sock, senddata)
 
             # receive dict
-            recvdata = client_sock.recv_dict()
+            recvdata = recv_dict(client_sock)
             # status = False
             if not recvdata["status"]:
                 print(recvdata["error"])
@@ -147,7 +148,7 @@ def run_client(client_sock, client_id):
             choices = ["min", "max", "first", "last", "median"]
 
             # get min, max, first, last, median
-            print("Escolha um ou mais: [ min, max, first, last, median ]\nEscolhas múltiplas separadas por ',' sem espaços.\n")
+            print("Escolha um ou mais: [ min, max, first, last, median ]\nEscolhas múltiplas separadas por ',' sem espaços.")
             while True:
                 choice = input("Escolha? ").split(',')
                 if all([c in choices for c in choice]):
@@ -156,10 +157,10 @@ def run_client(client_sock, client_id):
 
             # send dict
             senddata = {"op": "GUESS", "choice": choice}
-            client_sock.send_dict(senddata)
+            send_dict(client_sock, senddata)
 
             # receive dict
-            recvdata = client_sock.recv_dict()
+            recvdata = recv_dict(client_sock)
             # status = False
             if not recvdata["status"]:
                 print(recvdata["error"])
@@ -167,10 +168,10 @@ def run_client(client_sock, client_id):
 
             # status = True
             if recvdata["result"]:
-                print("Acertou!")
-                quit_action(client_sock, attempts)
+                print("Acertou!\nSaindo...")
             else:
-                print("Errou!")
+                print("Errou!\nSaindo...")
+            quit_action(client_sock, attempts)
 
     return None
 
@@ -185,11 +186,9 @@ def main():
         sys.exit(1)
 
     # server case
-    if sys.argv == 4:
+    if len(sys.argv) == 4:
         # verify entries
         try:
-            # verify the client id
-            int(sys.argv[1])
             # obtain the port number
             port = int(sys.argv[2])
             # obtain the hostname that can be the localhost or another host
@@ -206,11 +205,9 @@ def main():
             sys.exit(1)
 
     # localhost case
-    elif sys.argv == 3:
+    elif len(sys.argv) == 3:
         # verify entries
         try:
-            # verify the client id
-            int(sys.argv[1])
             # obtain the port number
             port = int(sys.argv[2])
             # obtain the hostname that can be the localhost or another host
