@@ -193,7 +193,7 @@ def create_file():
 #
 # update report csv file with the simulation of the client
 def update_file(client_id, size, guess):
-    with open("result.csv", "w", newline="") as csvfile:
+    with open("result.csv", "a", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, delimiter=',', fieldnames=["client_id", "number_of_numbers", "guess"])
         writer.writerow({"client_id": client_id, "size": size, "guess": guess})
 
