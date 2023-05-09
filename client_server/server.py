@@ -142,9 +142,11 @@ def new_client(client_sock, request):
     client_id = request["client_id"]
     if client_id in users:
         response = {"op": "START", "status": False, "error": "Client already exists"}
+        print("Failed to add client %s\nReason: %s" % (client_id, response["error"]))
     else:
         users[client_id] = {"socket": client_sock, "numbers": [], "hasStopped": False}
         response = {"op": "START", "status": True}
+        print("Client %s added\n" % client_id)
     return response
 
 
@@ -171,6 +173,7 @@ def quit_client(client_sock, request):
     client_id = find_client_id(client_sock)
     if client_id is None:
         response = {"op": "QUIT", "status": False, "error": "Client does not exist"}
+        print("Failed to remove client %s\nReason: %s" % (client_id, response["error"]))
     else:
         clean_client(client_sock)
         response = {"op": "QUIT", "status": True}
@@ -195,7 +198,7 @@ def create_file():
 def update_file(client_id, size, guess):
     with open("result.csv", "a", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, delimiter=',', fieldnames=["client_id", "number_of_numbers", "guess"])
-        writer.writerow({"client_id": client_id, "size": size, "guess": guess})
+        writer.writerow({"client_id": client_id, "number_of_numbers": size, "guess": guess})
 
 
 #
@@ -208,12 +211,15 @@ def number_client(client_sock, request):
     client_id = find_client_id(client_sock)
     if client_id is None:
         response = {"op": "NUMBER", "status": False, "error": "Client does not exist"}
+        print("Failed to add number to client %s\nReason: %s" % (client_id, response["error"]))
     elif users[client_id]["hasStopped"]:
         response = {"op": "NUMBER", "status": False, "error": "Client has stopped"}
+        print("Failed to add number to client %s\nReason: %s" % (client_id, response["error"]))
     else:
         num = request["number"]
         users[client_id]["numbers"].append(num)
         response = {"op": "NUMBER", "status": True}
+        print("Number %d added to client %s\n" % (num, client_id))
     return response
 
 
@@ -229,11 +235,13 @@ def stop_client(client_sock, request):
     client_id = find_client_id(client_sock)
     if client_id is None:
         response = {"op": "STOP", "status": False, "error": "Client does not exist"}
+        print("Failed to stop client %s\nReason: %s" % (client_id, response["error"]))
     else:
         value, solution = generate_result(users[client_id]["numbers"])
         response = {"op": "STOP", "status": True, "value": value}
         users[client_id]["solution"] = solution
         users[client_id]["hasStopped"] = True
+        print("Client %s stopped\nChosen number: %d\nSolution: %s" % (client_id, value, solution))
     return response
 
 
@@ -248,12 +256,16 @@ def guess_client(client_sock, request):
     client_id = find_client_id(client_sock)
     if client_id is None:
         response = {"op": "GUESS", "status": False, "error": "Client does not exist"}
+        print("Failed to guess client %s\nReason: %s" % (client_id, response["error"]))
     elif not users[client_id]["hasStopped"]:
         response = {"op": "GUESS", "status": False, "error": "Client has not yet stopped"}
+        print("Failed to guess client %s\nReason: %s" % (client_id, response["error"]))
     else:
-        choice = request["guess"]
+        choice = request["choice"]
         update_file(client_id, len(users[client_id]["numbers"]), choice)
         response = {"op": "GUESS", "status": True, "result": choice == users[client_id]["solution"]}
+        print("Client %s guessed %s\n" % (client_id, choice))
+        clean_client(client_sock)
     return response
 
 
