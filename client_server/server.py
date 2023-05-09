@@ -143,9 +143,8 @@ def new_client(client_sock, request):
     if client_id in users:
         response = {"op": "START", "status": False, "error": "Client already exists"}
     else:
-        users[client_id] = {"socket": client_sock, "numbers": [], "guesses": []}
+        users[client_id] = {"socket": client_sock, "numbers": [], "hasStopped": False}
         response = {"op": "START", "status": True}
-    update_file(client_id, 0, "START")
     return response
 
 
@@ -173,7 +172,6 @@ def quit_client(client_sock, request):
     if client_id is None:
         response = {"op": "QUIT", "status": False, "error": "Client does not exist"}
     else:
-        update_file(client_id, len(users[client_id]["guesses"]), "QUIT")
         clean_client(client_sock)
         response = {"op": "QUIT", "status": True}
     return response
@@ -195,7 +193,9 @@ def create_file():
 #
 # update report csv file with the simulation of the client
 def update_file(client_id, size, guess):
-    return None
+    with open("result.csv", "a", newline="") as csvfile:
+        writer = csv.DictWriter(csvfile, delimiter=',', fieldnames=["client_id", "number_of_numbers", "guess"])
+        writer.writerow({"client_id": client_id, "size": size, "guess": guess})
 
 
 #
@@ -208,6 +208,8 @@ def number_client(client_sock, request):
     client_id = find_client_id(client_sock)
     if client_id is None:
         response = {"op": "NUMBER", "status": False, "error": "Client does not exist"}
+    elif users[client_id]["hasStopped"]:
+        response = {"op": "NUMBER", "status": False, "error": "Client has stopped"}
     else:
         num = request["number"]
         users[client_id]["numbers"].append(num)
@@ -224,10 +226,15 @@ def number_client(client_sock, request):
 # process the report file with the result
 # return response message with result or error message
 def stop_client(client_sock, request):
-    # ...
-    # value, solution = generate_result (users[client_id]["numbers"])
-    # ...
-    return None
+    client_id = find_client_id(client_sock)
+    if client_id is None:
+        response = {"op": "STOP", "status": False, "error": "Client does not exist"}
+    else:
+        value, solution = generate_result(users[client_id]["numbers"])
+        response = {"op": "STOP", "status": True, "value": value}
+        users[client_id]["solution"] = solution
+        users[client_id]["hasStopped"] = True
+    return response
 
 
 #
@@ -238,7 +245,16 @@ def stop_client(client_sock, request):
 # eliminate client from dictionary
 # return response message with result or error message
 def guess_client(client_sock, request):
-    return None
+    client_id = find_client_id(client_sock)
+    if client_id is None:
+        response = {"op": "GUESS", "status": False, "error": "Client does not exist"}
+    elif not users[client_id]["hasStopped"]:
+        response = {"op": "GUESS", "status": False, "error": "Client has not yet stopped"}
+    else:
+        choice = request["guess"]
+        update_file(client_id, len(users[client_id]["numbers"]), choice)
+        response = {"op": "GUESS", "status": True, "result": choice == users[client_id]["solution"]}
+    return response
 
 
 def main():
