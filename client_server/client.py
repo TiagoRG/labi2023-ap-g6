@@ -147,7 +147,7 @@ def run_client(client_sock, client_id):
             print("Número escolhido: ", recvdata["value"])
 
         elif option.upper() == "GUESS":
-            # choices = ["min", "max", "first", "last", "median"]
+            choices = ["min", "max", "first", "last", "median"]
 
             # get min, max, first, last, median
             choice = input("Escolha um ou mais:\nmin, max, first, last, median\nEscolhas múltiplas separadas por ',' sem espaços.\n\nEscolha? ").split(',')
