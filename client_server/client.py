@@ -78,15 +78,13 @@ def quit_action(client_sock, attempts):
 
 # returns a valid number
 def returnValidNum():
-    num = 0
     while 1:
         try:
             num = int(input("Número? "))
         except ValueError:
             print("Invalid input")
             continue
-        finally:
-            break
+        break
     return num
 
 
