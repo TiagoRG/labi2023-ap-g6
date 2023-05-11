@@ -14,13 +14,22 @@ from Crypto.Hash import SHA256
 # Function to encript values for sending in json format
 # return int data encrypted in a 16 bytes binary string coded in base64
 def encrypt_intvalue(cipherkey, data):
-    return None
+    data = cipherkey.encrypt(bytes("%16d" % data, "utf8"))
+    data_tosend = str(base64.b64encode(data), "utf8")
+
+    return data_tosend
 
 
 # Function to decript values received in json format
 # return int data decrypted from a 16 bytes binary strings coded in base64
 def decrypt_intvalue(cipherkey, data):
-    return None
+    data = base64.b64decode(data)
+    data = cipherkey.decrypt(data)
+    try:
+        data = int(str(data, "utf8"))
+    except ValueError:
+        return "Error"
+    return data
 
 
 # verify if response from server is valid or is an error message and act accordingly - já está implementada
@@ -88,12 +97,32 @@ def verifyPort():
 
 def run_client(client_sock, client_id):
     attempts = 0
+    usingCipher = None
+
     while 1:
         option = input("Operation? (START, QUIT, NUMBER, STOP, GUESS)\n> ")
 
         if option.upper() == "START":
+            while 1:
+                choice = input("Do you wish to use a cipher? (Y/N)\n")
+                if choice.upper() == "Y":
+                    usingCipher = True
+
+                    # generate key
+                    cipherkey = os.urandom(16)
+                    cipherkey_tosend = str(base64.b64encode(cipherkey), "utf8")
+                    cipher = AES.new(cipherkey, AES.MODE_ECB)
+                    break
+                elif choice.upper() == "N":
+                    usingCipher = False
+                    cipher = None
+                    break
+                else:
+                    print("Invalid input")
+                    continue
+
             # send dict
-            senddata = {"op": "START", "client_id": client_id}
+            senddata = {"op": "START", "client_id": client_id, "cipher": cipherkey_tosend}
             send_dict(client_sock, senddata)
 
             # receive dict
@@ -140,9 +169,13 @@ def run_client(client_sock, client_id):
             if not recvdata["status"]:
                 print(recvdata["error"])
                 continue
+            # decipher data
+            data = recvdata["value"]
+            if usingCipher:
+                data = decrypt_intvalue(cipherkey, data)
 
             # status = True
-            print("Número escolhido: ", recvdata["value"])
+            print("Número escolhido: ", data)
 
         elif option.upper() == "GUESS":
             choices = ["min", "max", "first", "last", "median"]
