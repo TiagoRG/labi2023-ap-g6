@@ -78,7 +78,6 @@ def quit_action(client_sock, attempts):
 
 # returns a valid number
 def returnValidNum():
-    num = 0
     while 1:
         try:
             num = int(input("Número? "))
@@ -96,7 +95,8 @@ def verifyPort():
 
 def run_client(client_sock, client_id):
     attempts = 0
-    usingCipher = None; hasStopped = None
+    usingCipher = None
+    hasStopped = False
 
     while 1:
         option = input("Operation? (START, QUIT, NUMBER, STOP, GUESS)\n> ")
@@ -140,6 +140,9 @@ def run_client(client_sock, client_id):
             exit(0)
 
         elif option.upper() == "NUMBER":
+            if hasStopped:
+                print("You can't add more numbers")
+                continue
             # verify if number is int
             num = returnValidNum()
 
@@ -158,6 +161,9 @@ def run_client(client_sock, client_id):
             print("Added number with success\n")
 
         elif option.upper() == "STOP":
+            if hasStopped:
+                print("You can't stop the game again")
+                continue
             # send dict
             senddata = {"op": "STOP"}
             send_dict(client_sock, senddata)
@@ -173,10 +179,15 @@ def run_client(client_sock, client_id):
             if usingCipher:
                 data = decrypt_intvalue(cipher, data)
 
+            hasStopped = True
             # status = True
             print("Número escolhido: ", data)
 
         elif option.upper() == "GUESS":
+            if not hasStopped:
+                print("You can't guess before stopping the game")
+                continue
+
             choices = ["min", "max", "first", "last", "median"]
 
             # get min, max, first, last, median
