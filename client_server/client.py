@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+import hashlib
 import os
 import sys
 import socket
@@ -22,14 +22,12 @@ def encrypt_intvalue(cipherkey, data):
 
 # Function to decript values received in json format
 # return int data decrypted from a 16 bytes binary strings coded in base64
-def decrypt_intvalue(cipher, dataarg):
-    data = cipher.encrypt(bytes("%16d" % dataarg, "utf8"))
-    data_tosend = str(base64.b64encode(data), "utf8")
-    try:
-        data = int(data_tosend)
-    except ValueError:
-        return "Error"
-    return data
+def decrypt_intvalue(cipherkey, data_arg):
+    key = base64.b64decode(cipherkey)
+    cipher = AES.new(key, AES.MODE_ECB)
+    data = base64.b64decode(data_arg)
+    data = cipher.decrypt(data)
+    return int(str(data, "utf8"))
 
 
 # verify if response from server is valid or is an error message and act accordingly - já está implementada
@@ -41,7 +39,7 @@ def validate_response(client_sock, response):
 
 
 # process QUIT operation
-def quit_action(client_sock, attempts):
+def quit_action(client_sock):
     senddata = {"op": "QUIT"}
     send_dict(client_sock, senddata)
 
@@ -53,9 +51,10 @@ def quit_action(client_sock, attempts):
         client_sock.close()
 
     # status = True
-    print("Número de tentativas: ", attempts)
+    print("Saindo...")
     print("Client removed with success")
     client_sock.close()
+    exit(0)
 
 
 # Outcomming message structure:
@@ -94,34 +93,26 @@ def verifyPort():
 
 
 def run_client(client_sock, client_id):
-    attempts = 0
-    usingCipher = None
     hasStopped = False
+    cipherkey = None
 
     while 1:
         option = input("Operation? (START, QUIT, NUMBER, STOP, GUESS)\n> ")
 
         if option.upper() == "START":
             while 1:
-                choice = input("Do you wish to use a cipher? (Y/N)\n")
+                choice = input("\nDo you wish to use a cipher? (Y/N)\n> ")
                 if choice.upper() == "Y":
-                    usingCipher = True
-
-                    # generate key
-                    cipherkey = os.urandom(16)
-                    cipherkey_tosend = str(base64.b64encode(cipherkey), "utf8")
-                    cipher = AES.new(cipherkey, AES.MODE_ECB)
+                    cipherkey = base64.b64encode(os.urandom(16)).decode()
                     break
                 elif choice.upper() == "N":
-                    usingCipher = False
-                    cipher = None
                     break
                 else:
                     print("Invalid input")
                     continue
 
             # send dict
-            senddata = {"op": "START", "client_id": client_id, "cipher": cipherkey_tosend}
+            senddata = {"op": "START", "client_id": client_id, "cipher": cipherkey}
             send_dict(client_sock, senddata)
 
             # receive dict
@@ -133,10 +124,10 @@ def run_client(client_sock, client_id):
                 continue
 
             # status = True
-            print("Added client with success\n")
+            print("Client added with success\n")
 
         elif option.upper() == "QUIT":
-            quit_action(client_sock, attempts)
+            quit_action(client_sock)
             exit(0)
 
         elif option.upper() == "NUMBER":
@@ -158,7 +149,7 @@ def run_client(client_sock, client_id):
                 client_sock.close()
                 continue
             # status = True
-            print("Added number with success\n")
+            print("Number added with success\n")
 
         elif option.upper() == "STOP":
             if hasStopped:
@@ -176,27 +167,62 @@ def run_client(client_sock, client_id):
                 continue
             # decipher data
             data = recvdata["value"]
-            if usingCipher:
-                data = decrypt_intvalue(cipher, data)
+            if cipherkey is not None:
+                data = decrypt_intvalue(cipherkey, data)
 
             hasStopped = True
             # status = True
-            print("Número escolhido: ", data)
+            print("Número escolhido: ", data, "\n")
 
         elif option.upper() == "GUESS":
             if not hasStopped:
                 print("You can't guess before stopping the game")
                 continue
 
-            choices = ["min", "max", "first", "last", "median"]
-
-            # get min, max, first, last, median
-            print("Escolha um ou mais: [ min, max, first, last, median ]\nEscolhas múltiplas separadas por ',' sem espaços.")
+            # print the possible choices
+            print("""Escolha uma das hipósteses:
+1 - first
+2 - last
+3 - min
+4 - max
+5 - median
+6 - min, first
+7 - max, first
+8 - min, last
+9 - max, last
+10 - median, first
+11 - median, last""")
             while True:
-                choice = input("Escolha? ").split(',')
-                if all([c in choices for c in choice]):
-                    attempts += 1
+                try:
+                    choice_num = int(input("> "))
+                    if choice_num == 1:
+                        choice = ["first"]
+                    elif choice_num == 2:
+                        choice = ["last"]
+                    elif choice_num == 3:
+                        choice = ["min"]
+                    elif choice_num == 4:
+                        choice = ["max"]
+                    elif choice_num == 5:
+                        choice = ["median"]
+                    elif choice_num == 6:
+                        choice = ["min", "first"]
+                    elif choice_num == 7:
+                        choice = ["max", "first"]
+                    elif choice_num == 8:
+                        choice = ["min", "last"]
+                    elif choice_num == 9:
+                        choice = ["max", "last"]
+                    elif choice_num == 10:
+                        choice = ["median", "first"]
+                    elif choice_num == 11:
+                        choice = ["median", "last"]
+                    else:
+                        print("Invalid input")
+                        continue
                     break
+                except ValueError:
+                    continue
 
             # send dict
             senddata = {"op": "GUESS", "choice": choice}
@@ -210,11 +236,8 @@ def run_client(client_sock, client_id):
                 continue
 
             # status = True
-            if recvdata["result"]:
-                print("Acertou!\nSaindo...")
-            else:
-                print("Errou!\nSaindo...")
-            quit_action(client_sock, attempts)
+            print("\n" + ("Acertou!" if recvdata["result"] else "Errou!") + "\n")
+            quit_action(client_sock)
 
     return None
 
