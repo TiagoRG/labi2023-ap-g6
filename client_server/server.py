@@ -27,13 +27,23 @@ def find_client_id(client_sock):
 # Função para encriptar valores a enviar em formato json com codificação base64
 # return int data encrypted in a 16 bytes binary string and coded base64
 def encrypt_intvalue(client_id, data):
-    return None
+    cipher = users[client_id]["cipher"]
+    encrypt = cipher.encrypt(bytes("%16d" % data, "utf-8"))
+    return str(base64.b64encode(encrypt), "utf-8")
 
 
 # Função para desencriptar valores recebidos em formato json com codificação base64
 # return int data decrypted from a 16 bytes binary string and coded base64
 def decrypt_intvalue(client_id, data):
-    return None
+    cipher = users[client_id]["cipher"]
+    decrypt = base64.b64decode(data)
+    decrypt = cipher.decrypt(decrypt)
+
+    try:
+        decrypt = int(str(decrypt, "utf8"))
+    except ValueError:
+        return "Error"
+    return decrypt
 
 
 # Função auxiliar para gerar o resultado - já está implementada
@@ -140,11 +150,17 @@ def new_msg(client_sock):
 # return response message with or without error message
 def new_client(client_sock, request):
     client_id = request["client_id"]
+
     if client_id in users:
         response = {"op": "START", "status": False, "error": "Client already exists"}
         print("Failed to add client %s\nReason: %s" % (client_id, response["error"]))
     else:
-        users[client_id] = {"socket": client_sock, "numbers": [], "hasStopped": False}
+        if request["cipher"] is not None:
+            cipherkey = base64.b64decode(request["cipher"])
+            cipher = AES.new(cipherkey, AES.MODE_ECB)
+            decrypt_intvalue(client_id, request["cipher"])
+
+        users[client_id] = {"socket": client_sock, "cipher": request["cipher"], "numbers": [], "hasStopped": False}
         response = {"op": "START", "status": True}
         print("Client %s added\n" % client_id)
     return response
@@ -238,8 +254,11 @@ def stop_client(client_sock, request):
         print("Failed to stop client %s\nReason: %s" % (client_id, response["error"]))
     else:
         value, solution = generate_result(users[client_id]["numbers"])
-        response = {"op": "STOP", "status": True, "value": value}
-        users[client_id]["solution"] = solution
+        if users[client_id]["cipher"] is not None:
+            encrypt_intvalue(client_id, value)
+        else:
+            response = {"op": "STOP", "status": True, "value": value}
+            users[client_id]["solution"] = solution
         users[client_id]["hasStopped"] = True
         print("Client %s stopped\nChosen number: %d\nSolution: %s" % (client_id, value, solution))
     return response
