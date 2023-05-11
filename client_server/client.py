@@ -22,11 +22,11 @@ def encrypt_intvalue(cipherkey, data):
 
 # Function to decript values received in json format
 # return int data decrypted from a 16 bytes binary strings coded in base64
-def decrypt_intvalue(cipher, data):
-    data = base64.b64decode(data)
-    data = cipher.decrypt(data)
+def decrypt_intvalue(cipher, dataarg):
+    data = cipher.encrypt(bytes("%16d" % dataarg, "utf8"))
+    data_tosend = str(base64.b64encode(data), "utf8")
     try:
-        data = int(str(data, "utf8"))
+        data = int(data_tosend)
     except ValueError:
         return "Error"
     return data
@@ -46,7 +46,7 @@ def quit_action(client_sock, attempts):
     send_dict(client_sock, senddata)
 
     # receive dict
-    recvdata = client_sock.recv_dict()
+    recvdata = recv_dict(client_sock)
     # status = False
     if not recvdata["status"]:
         print(recvdata["error"])
@@ -230,7 +230,7 @@ def main():
 
     try:
         port = int(sys.argv[2])
-        hostname = [comp for comp in sys.argv[3].split(".") if 0 <= int(comp) <= 255] if len(sys.argv) == 4 else ["127", "0", "0", "1"]
+        hostname = [comp for comp in sys.argv[3].split(".") if 0 <= int(comp) <= 255] if len(sys.argv) == 4 else socket.gethostbyname(socket.gethostname()).split(".")
         if len(hostname) != 4:
             print("Invalid ip")
             sys.exit(1)
