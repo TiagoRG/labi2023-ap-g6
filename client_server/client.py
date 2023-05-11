@@ -185,39 +185,19 @@ def main():
         print("Usage python3 client.py client_id porto [máquina](opcional)")
         sys.exit(1)
 
-    # server case
-    if len(sys.argv) == 4:
-        # verify entries
-        try:
-            # obtain the port number
-            port = int(sys.argv[2])
-            # obtain the hostname that can be the localhost or another host
-            hostname = [int(comp) for comp in sys.argv[3].split(".") if 0 <= int(comp) <= 255]
-        except ValueError:
-            print("Invalid args")
-            sys.exit(1)
-        # verify hostname
+    try:
+        port = int(sys.argv[2])
+        hostname = [comp for comp in sys.argv[3].split(".") if 0 <= int(comp) <= 255] if len(sys.argv) == 4 else ["127", "0", "0", "1"]
         if len(hostname) != 4:
             print("Invalid ip")
             sys.exit(1)
-        if not verifyPort():
-            print("Port must be between 1024 and 65535")
-            sys.exit(1)
-
-    # localhost case
-    elif len(sys.argv) == 3:
-        # verify entries
-        try:
-            # obtain the port number
-            port = int(sys.argv[2])
-            # obtain the hostname that can be the localhost or another host
-            hostname = "127.0.0.1"
-        except ValueError:
-            print("Invalid args")
-            sys.exit(1)
-        if not verifyPort():
-            print("Port must be between 1024 and 65535")
-            sys.exit(1)
+        hostname = ".".join(hostname)
+    except ValueError:
+        print("Invalid args")
+        sys.exit(1)
+    if not verifyPort():
+        print("Port must be between 1024 and 65535")
+        sys.exit(1)
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.bind(("0.0.0.0", 0))
