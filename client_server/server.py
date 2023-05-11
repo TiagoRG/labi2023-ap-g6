@@ -252,6 +252,9 @@ def stop_client(client_sock, request):
     if client_id is None:
         response = {"op": "STOP", "status": False, "error": "Client does not exist"}
         print("Failed to stop client %s\nReason: %s" % (client_id, response["error"]))
+    elif len(users[client_id]["numbers"]) < 1:
+        response = {"op": "STOP", "status": False, "error": "Client has not yet sent any number"}
+        print("Failed to stop client %s\nReason: %s" % (client_id, response["error"]))
     else:
         value, solution = generate_result(users[client_id]["numbers"])
         if users[client_id]["cipher"] is not None:
