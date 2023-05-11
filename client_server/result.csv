@@ -1,1 +1,11 @@
 client_id,number_of_numbers,guess
+test,2,"['max', 'last']"
+test,2,"['min', 'first']"
+test,1,"['max', 'first']"
+test,3,['median']
+test,3,"['min', 'first']"
+test,8,"['min', 'first']"
+test,8,['max']
+test,2,"['max', 'first']"
+test,5,"['max', 'last']"
+test,4,['min']
