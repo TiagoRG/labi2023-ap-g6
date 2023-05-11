@@ -155,12 +155,12 @@ def new_client(client_sock, request):
         response = {"op": "START", "status": False, "error": "Client already exists"}
         print("Failed to add client %s\nReason: %s" % (client_id, response["error"]))
     else:
+        cipher = None
         if request["cipher"] is not None:
             cipherkey = base64.b64decode(request["cipher"])
             cipher = AES.new(cipherkey, AES.MODE_ECB)
-            decrypt_intvalue(client_id, request["cipher"])
 
-        users[client_id] = {"socket": client_sock, "cipher": request["cipher"], "numbers": [], "hasStopped": False}
+        users[client_id] = {"socket": client_sock, "cipher": cipher, "numbers": [], "hasStopped": False}
         response = {"op": "START", "status": True}
         print("Client %s added\n" % client_id)
     return response
@@ -259,9 +259,9 @@ def stop_client(client_sock, request):
         value, solution = generate_result(users[client_id]["numbers"])
         if users[client_id]["cipher"] is not None:
             encrypt_intvalue(client_id, value)
-        else:
-            response = {"op": "STOP", "status": True, "value": value}
-            users[client_id]["solution"] = solution
+
+        response = {"op": "STOP", "status": True, "value": value}
+        users[client_id]["solution"] = solution
         users[client_id]["hasStopped"] = True
         print("Client %s stopped\nChosen number: %d\nSolution: %s" % (client_id, value, solution))
     return response

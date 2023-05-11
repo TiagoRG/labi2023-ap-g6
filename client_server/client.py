@@ -22,9 +22,9 @@ def encrypt_intvalue(cipherkey, data):
 
 # Function to decript values received in json format
 # return int data decrypted from a 16 bytes binary strings coded in base64
-def decrypt_intvalue(cipherkey, data):
+def decrypt_intvalue(cipher, data):
     data = base64.b64decode(data)
-    data = cipherkey.decrypt(data)
+    data = cipher.decrypt(data)
     try:
         data = int(str(data, "utf8"))
     except ValueError:
@@ -177,7 +177,7 @@ def run_client(client_sock, client_id):
             # decipher data
             data = recvdata["value"]
             if usingCipher:
-                data = decrypt_intvalue(cipherkey, data)
+                data = decrypt_intvalue(cipher, data)
 
             hasStopped = True
             # status = True
