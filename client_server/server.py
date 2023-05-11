@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+import hashlib
 import sys
 import socket
 import select
@@ -24,12 +24,19 @@ def find_client_id(client_sock):
     return None
 
 
+def pad(data):
+    pad_len = 16 - (len(str(data)) % 16)
+    padding = bytes([pad_len] * pad_len)
+    return str(data) + str(padding)
+
+
 # Função para encriptar valores a enviar em formato json com codificação base64
 # return int data encrypted in a 16 bytes binary string and coded base64
-def encrypt_intvalue(client_id, data):
-    cipher = users[client_id]["cipher"]
-    encrypt = cipher.encrypt(bytes("%16d" % data, "utf-8"))
-    return str(base64.b64encode(encrypt), "utf-8")
+def encrypt_intvalue(client_id, data_arg):
+    key = base64.b64decode(users[client_id]["cipher"])
+    cipher = AES.new(key, AES.MODE_ECB)
+    data = cipher.encrypt(bytes("%16d" % data_arg, "utf8"))
+    return str(base64.b64encode(data), "utf8")
 
 
 # Função para desencriptar valores recebidos em formato json com codificação base64
@@ -157,8 +164,7 @@ def new_client(client_sock, request):
     else:
         cipher = None
         if request["cipher"] is not None:
-            cipherkey = base64.b64decode(request["cipher"])
-            cipher = AES.new(cipherkey, AES.MODE_ECB)
+            cipher = request["cipher"]
 
         users[client_id] = {"socket": client_sock, "cipher": cipher, "numbers": [], "hasStopped": False}
         response = {"op": "START", "status": True}
@@ -258,9 +264,12 @@ def stop_client(client_sock, request):
     else:
         value, solution = generate_result(users[client_id]["numbers"])
         if users[client_id]["cipher"] is not None:
-            encrypt_intvalue(client_id, value)
+            encripted_value = encrypt_intvalue(client_id, value)
+        else:
+            encripted_value = value
 
-        response = {"op": "STOP", "status": True, "value": value}
+        update_file(client_id, len(users[client_id]["numbers"]), solution)
+        response = {"op": "STOP", "status": True, "value": encripted_value}
         users[client_id]["solution"] = solution
         users[client_id]["hasStopped"] = True
         print("Client %s stopped\nChosen number: %d\nSolution: %s" % (client_id, value, solution))
@@ -284,10 +293,8 @@ def guess_client(client_sock, request):
         print("Failed to guess client %s\nReason: %s" % (client_id, response["error"]))
     else:
         choice = request["choice"]
-        update_file(client_id, len(users[client_id]["numbers"]), choice)
         response = {"op": "GUESS", "status": True, "result": choice == users[client_id]["solution"]}
         print("Client %s guessed %s\n" % (client_id, choice))
-        clean_client(client_sock)
     return response
 
 
@@ -310,7 +317,7 @@ def main():
         sys.exit(1)
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(("127.0.0.1", port))
+    server_socket.bind((socket.gethostbyname(socket.gethostname()), port))
     server_socket.listen()
 
     clients = []
