@@ -25,10 +25,10 @@ class Tcolors:
 # Function to encript values for sending in json format
 # return int data encrypted in a 16 bytes binary string coded in base64
 def encrypt_intvalue(cipherkey, data):
-    data = cipherkey.encrypt(bytes("%16d" % data, "utf8"))
-    data_tosend = str(base64.b64encode(data), "utf8")
-
-    return data_tosend
+    key = base64.b64decode(cipherkey)
+    cipher = AES.new(key, AES.MODE_ECB)
+    data = cipher.encrypt(bytes("%16d" % data, "utf8"))
+    return str(base64.b64encode(data), "utf8")
 
 
 # Function to decript values received in json format
@@ -164,8 +164,14 @@ def run_client(client_sock, client_id):
             # verify if number is int
             num = returnValidNum()
 
+            # encrypt the number is a cipher is being used
+            if cipherkey is not None:
+                encrypted_num = encrypt_intvalue(cipherkey, num)
+            else:
+                encrypted_num = num
+
             # send dict and receive response
-            senddata = {"op": "NUMBER", "number": num}
+            senddata = {"op": "NUMBER", "number": encrypted_num}
             recvdata = sendrecv_dict(client_sock, senddata)
 
             # status = False
@@ -187,6 +193,7 @@ def run_client(client_sock, client_id):
                 print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't stop the game again\n{Tcolors.ENDC}")
                 continue
 
+            # creates the synthesis for the number list
             hasher = SHA256.new()
             for number in numbers:
                 hasher.update(bytes(str(number), "utf8"))
@@ -199,6 +206,7 @@ def run_client(client_sock, client_id):
             if not recvdata["status"]:
                 print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
                 continue
+
             # decipher data if using encryption
             data = recvdata["value"]
             if cipherkey is not None:
