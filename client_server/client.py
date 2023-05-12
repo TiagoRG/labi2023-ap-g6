@@ -270,7 +270,7 @@ def run_client(client_sock, client_id):
 def main():
     # validate the number of arguments and eventually print error message and exit with error
     # verify type of arguments and eventually print error message and exit with error
-    if len(sys.argv) is (3 or 4):
+    if len(sys.argv) not in [3, 4]:
         print(f"{Tcolors.WARNING}Usage: python3 client.py client_id port DNS{Tcolors.ENDC}")
         sys.exit(1)
 
@@ -292,8 +292,11 @@ def main():
     client_socket.bind(("0.0.0.0", 0))
     try:
         client_socket.connect((hostname, port))
-    except ConnectionRefusedError:
-        print(f"{Tcolors.FAIL}Error: couldn't connect to server{Tcolors.ENDC}")
+    except ConnectionError:
+        print(f"{Tcolors.FAIL}Error: connection to server failed{Tcolors.ENDC}")
+        sys.exit(1)
+    except OSError:
+        print(f"{Tcolors.FAIL}Error: no route to server{Tcolors.ENDC}")
         sys.exit(1)
 
     run_client(client_socket, sys.argv[1])
