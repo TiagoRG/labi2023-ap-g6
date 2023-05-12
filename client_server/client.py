@@ -50,20 +50,18 @@ def validate_response(client_sock, response):
 
 
 # process QUIT operation
-def quit_action(client_sock):
-    senddata = {"op": "QUIT"}
-    send_dict(client_sock, senddata)
+def quit_action(client_sock, has_started):
+    if has_started:
+        senddata = {"op": "QUIT"}
+        recvdata = sendrecv_dict(client_sock, senddata)
 
-    # receive dict
-    recvdata = recv_dict(client_sock)
-    # status = False
-    if not recvdata["status"]:
-        print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
-        client_sock.close()
+        # status = False
+        if not recvdata["status"]:
+            print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
 
     # status = True
     print(f"{Tcolors.ENDC}Saindo...")
-    print(f"{Tcolors.OKGREEN}Client removed with success")
+    print(f"{Tcolors.OKGREEN}Client quit with success")
     client_sock.close()
     exit(0)
 
@@ -104,13 +102,18 @@ def verifyPort():
 
 
 def run_client(client_sock, client_id):
-    hasStopped = False
+    has_stopped = False
+    has_started = False
     cipherkey = None
 
     while 1:
         option = input(f"Operation? (START, QUIT, NUMBER, STOP, GUESS)\n{Tcolors.BOLD}> {Tcolors.UNDERLINE}")
 
         if option.upper() == "START":
+            if has_started:
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}Client already started{Tcolors.ENDC}")
+                continue
+
             while 1:
                 choice = input(f"\n{Tcolors.ENDC}Do you wish to use a cipher? {Tcolors.BOLD}(Y/N)\n> {Tcolors.UNDERLINE}")
                 if choice.upper() == "Y":
@@ -122,38 +125,39 @@ def run_client(client_sock, client_id):
                     print(f"{Tcolors.ENDC}{Tcolors.WARNING}Invalid input{Tcolors.ENDC}")
                     continue
 
-            # send dict
+            # send dict and receive response
             senddata = {"op": "START", "client_id": client_id, "cipher": cipherkey}
-            send_dict(client_sock, senddata)
+            recvdata = sendrecv_dict(client_sock, senddata)
 
-            # receive dict
-            recvdata = recv_dict(client_sock)
-            # status = False
             if not recvdata["status"]:
                 print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}Client not added, quitting...{Tcolors.ENDC}")
                 client_sock.close()
-                continue
+                exit(1)
 
             # status = True
+            has_started = True
             print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Client added with success{Tcolors.ENDC}\n")
 
         elif option.upper() == "QUIT":
-            quit_action(client_sock)
+            quit_action(client_sock, has_started)
             exit(0)
 
         elif option.upper() == "NUMBER":
-            if hasStopped:
+            if not has_started:
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You must start the game first{Tcolors.ENDC}")
+                continue
+
+            if has_stopped:
                 print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't add more numbers{Tcolors.ENDC}")
                 continue
             # verify if number is int
             num = returnValidNum()
 
-            # send dict
+            # send dict and receive response
             senddata = {"op": "NUMBER", "number": num}
-            send_dict(client_sock, senddata)
+            recvdata = sendrecv_dict(client_sock, senddata)
 
-            # receive dict
-            recvdata = recv_dict(client_sock)
             # status = False
             if not recvdata["status"]:
                 print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
@@ -163,15 +167,18 @@ def run_client(client_sock, client_id):
             print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Number added with success{Tcolors.ENDC}\n")
 
         elif option.upper() == "STOP":
-            if hasStopped:
+            if not has_started:
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You must start the game first{Tcolors.ENDC}")
+                continue
+
+            if has_stopped:
                 print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't stop the game again{Tcolors.ENDC}")
                 continue
-            # send dict
-            senddata = {"op": "STOP"}
-            send_dict(client_sock, senddata)
 
-            # receive dict
-            recvdata = recv_dict(client_sock)
+            # send dict and receive response
+            senddata = {"op": "STOP"}
+            recvdata = sendrecv_dict(client_sock, senddata)
+
             # status = False
             if not recvdata["status"]:
                 print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
@@ -181,12 +188,16 @@ def run_client(client_sock, client_id):
             if cipherkey is not None:
                 data = decrypt_intvalue(cipherkey, data)
 
-            hasStopped = True
+            has_stopped = True
             # status = True
             print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Número escolhido: {Tcolors.UNDERLINE}{data}{Tcolors.ENDC}\n")
 
         elif option.upper() == "GUESS":
-            if not hasStopped:
+            if not has_started:
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You must start the game first{Tcolors.ENDC}")
+                continue
+
+            if not has_stopped:
                 print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't guess before stopping the game{Tcolors.ENDC}")
                 continue
 
@@ -235,12 +246,10 @@ def run_client(client_sock, client_id):
                 except ValueError:
                     continue
 
-            # send dict
+            # send dict and receive response
             senddata = {"op": "GUESS", "choice": choice}
-            send_dict(client_sock, senddata)
+            recvdata = sendrecv_dict(client_sock, senddata)
 
-            # receive dict
-            recvdata = recv_dict(client_sock)
             # status = False
             if not recvdata["status"]:
                 print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
