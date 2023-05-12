@@ -136,7 +136,7 @@ def new_msg(client_sock):
     elif op == "GUESS":  #
         response = guess_client(client_sock, request)
     else:
-        response = {"op": op, "status": False, "error": "Operação inexistente"}
+        response = {"op": op, "status": False, "error": "Invalid operation"}
 
     # print (response)
     send_dict(client_sock, response)
@@ -197,7 +197,7 @@ def quit_client(client_sock, request):
 
 
 #
-# Suporte da criação de um ficheiro csv com o respectivo cabeçalho - já está implementada
+# Suporte da criação de um ficheiro csv com o respetivo cabeçalho - já está implementada
 #
 def create_file():
     with open("result.csv", "w", newline="") as csvfile:
