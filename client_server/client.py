@@ -11,6 +11,18 @@ from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 
 
+class Tcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
 # Function to encript values for sending in json format
 # return int data encrypted in a 16 bytes binary string coded in base64
 def encrypt_intvalue(cipherkey, data):
@@ -23,8 +35,7 @@ def encrypt_intvalue(cipherkey, data):
 # Function to decript values received in json format
 # return int data decrypted from a 16 bytes binary strings coded in base64
 def decrypt_intvalue(cipherkey, data_arg):
-    key = base64.b64decode(cipherkey)
-    cipher = AES.new(key, AES.MODE_ECB)
+    cipher = AES.new(base64.b64decode(cipherkey), AES.MODE_ECB)
     data = base64.b64decode(data_arg)
     data = cipher.decrypt(data)
     return int(str(data, "utf8"))
@@ -33,7 +44,7 @@ def decrypt_intvalue(cipherkey, data_arg):
 # verify if response from server is valid or is an error message and act accordingly - já está implementada
 def validate_response(client_sock, response):
     if not response["status"]:
-        print(response["error"])
+        print(f"{Tcolors.FAIL}Error: {response['error']}{Tcolors.ENDC}")
         client_sock.close()
         sys.exit(3)
 
@@ -47,12 +58,12 @@ def quit_action(client_sock):
     recvdata = recv_dict(client_sock)
     # status = False
     if not recvdata["status"]:
-        print(recvdata["error"])
+        print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
         client_sock.close()
 
     # status = True
-    print("Saindo...")
-    print("Client removed with success")
+    print(f"{Tcolors.ENDC}Saindo...")
+    print(f"{Tcolors.OKGREEN}Client removed with success")
     client_sock.close()
     exit(0)
 
@@ -79,9 +90,9 @@ def quit_action(client_sock):
 def returnValidNum():
     while 1:
         try:
-            num = int(input("Número? "))
+            num = int(input(f"{Tcolors.ENDC}{Tcolors.BOLD}> {Tcolors.UNDERLINE}"))
         except ValueError:
-            print("Invalid input")
+            print(f"{Tcolors.ENDC}{Tcolors.WARNING}Invalid input{Tcolors.ENDC}")
             continue
         break
     return num
@@ -97,18 +108,18 @@ def run_client(client_sock, client_id):
     cipherkey = None
 
     while 1:
-        option = input("Operation? (START, QUIT, NUMBER, STOP, GUESS)\n> ")
+        option = input(f"Operation? (START, QUIT, NUMBER, STOP, GUESS)\n{Tcolors.BOLD}> {Tcolors.UNDERLINE}")
 
         if option.upper() == "START":
             while 1:
-                choice = input("\nDo you wish to use a cipher? (Y/N)\n> ")
+                choice = input(f"\n{Tcolors.ENDC}Do you wish to use a cipher? {Tcolors.BOLD}(Y/N)\n> {Tcolors.UNDERLINE}")
                 if choice.upper() == "Y":
                     cipherkey = base64.b64encode(os.urandom(16)).decode()
                     break
                 elif choice.upper() == "N":
                     break
                 else:
-                    print("Invalid input")
+                    print(f"{Tcolors.ENDC}{Tcolors.WARNING}Invalid input{Tcolors.ENDC}")
                     continue
 
             # send dict
@@ -119,12 +130,12 @@ def run_client(client_sock, client_id):
             recvdata = recv_dict(client_sock)
             # status = False
             if not recvdata["status"]:
-                print(recvdata["error"])
+                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
                 client_sock.close()
                 continue
 
             # status = True
-            print("Client added with success\n")
+            print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Client added with success{Tcolors.ENDC}\n")
 
         elif option.upper() == "QUIT":
             quit_action(client_sock)
@@ -132,7 +143,7 @@ def run_client(client_sock, client_id):
 
         elif option.upper() == "NUMBER":
             if hasStopped:
-                print("You can't add more numbers")
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't add more numbers{Tcolors.ENDC}")
                 continue
             # verify if number is int
             num = returnValidNum()
@@ -145,15 +156,15 @@ def run_client(client_sock, client_id):
             recvdata = recv_dict(client_sock)
             # status = False
             if not recvdata["status"]:
-                print(recvdata["error"])
+                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
                 client_sock.close()
                 continue
             # status = True
-            print("Number added with success\n")
+            print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Number added with success{Tcolors.ENDC}\n")
 
         elif option.upper() == "STOP":
             if hasStopped:
-                print("You can't stop the game again")
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't stop the game again{Tcolors.ENDC}")
                 continue
             # send dict
             senddata = {"op": "STOP"}
@@ -163,7 +174,7 @@ def run_client(client_sock, client_id):
             recvdata = recv_dict(client_sock)
             # status = False
             if not recvdata["status"]:
-                print(recvdata["error"])
+                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
                 continue
             # decipher data
             data = recvdata["value"]
@@ -172,15 +183,15 @@ def run_client(client_sock, client_id):
 
             hasStopped = True
             # status = True
-            print("Número escolhido: ", data, "\n")
+            print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Número escolhido: {Tcolors.UNDERLINE}{data}{Tcolors.ENDC}\n")
 
         elif option.upper() == "GUESS":
             if not hasStopped:
-                print("You can't guess before stopping the game")
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't guess before stopping the game{Tcolors.ENDC}")
                 continue
 
             # print the possible choices
-            print("""Escolha uma das hipósteses:
+            print(f"""{Tcolors.ENDC}Escolha uma das hipósteses:
 1 - first
 2 - last
 3 - min
@@ -194,7 +205,7 @@ def run_client(client_sock, client_id):
 11 - median, last""")
             while True:
                 try:
-                    choice_num = int(input("> "))
+                    choice_num = int(input(f"{Tcolors.BOLD}> {Tcolors.UNDERLINE}"))
                     if choice_num == 1:
                         choice = ["first"]
                     elif choice_num == 2:
@@ -218,7 +229,7 @@ def run_client(client_sock, client_id):
                     elif choice_num == 11:
                         choice = ["median", "last"]
                     else:
-                        print("Invalid input")
+                        print(f"{Tcolors.WARNING}Invalid input{Tcolors.ENDC}")
                         continue
                     break
                 except ValueError:
@@ -232,43 +243,50 @@ def run_client(client_sock, client_id):
             recvdata = recv_dict(client_sock)
             # status = False
             if not recvdata["status"]:
-                print(recvdata["error"])
+                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
                 continue
 
             # status = True
-            print("\n" + ("Acertou!" if recvdata["result"] else "Errou!") + "\n")
+            print(f"\n{Tcolors.ENDC}{Tcolors.BOLD}{Tcolors.UNDERLINE}{Tcolors.OKBLUE}" + ("Acertou!" if recvdata["result"] else "Errou!") + f"{Tcolors.ENDC}\n")
             quit_action(client_sock)
 
     return None
 
 
 def main():
+
     # validate the number of arguments and eventually print error message and exit with error
     # verify type of arguments and eventually print error message and exit with error
 
     global hostname, port
     if len(sys.argv) not in [3, 4]:
-        print("Usage python3 client.py client_id porto [máquina](opcional)")
+        print(f"{Tcolors.WARNING}Usage: python3 client.py client_id porto [máquina](opcional){Tcolors.ENDC}")
         sys.exit(1)
 
     try:
         port = int(sys.argv[2])
         hostname = [comp for comp in sys.argv[3].split(".") if 0 <= int(comp) <= 255] if len(sys.argv) == 4 else socket.gethostbyname(socket.gethostname()).split(".")
         if len(hostname) != 4:
-            print("Invalid ip")
+            print(f"{Tcolors.WARNING}Invalid ip{Tcolors.ENDC}")
             sys.exit(1)
         hostname = ".".join(hostname)
     except ValueError:
-        print("Invalid args")
+        print(f"{Tcolors.WARNING}Invalid ip{Tcolors.ENDC}")
         sys.exit(1)
     if not verifyPort():
-        print("Port must be between 1024 and 65535")
+        print(f"{Tcolors.WARNING}Port must be between 1024 and 65535{Tcolors.ENDC}")
         sys.exit(1)
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.bind(("0.0.0.0", 0))
-    client_socket.connect((hostname, port))
+    try:
+        client_socket.connect((hostname, port))
+    except ConnectionRefusedError:
+        print(f"{Tcolors.FAIL}Error: couldn't connect to server{Tcolors.ENDC}")
+        sys.exit(1)
 
+    # Print the welcome message
+    print(f"{Tcolors.OKCYAN}{Tcolors.BOLD}{Tcolors.UNDERLINE}Number characteristics guesser game!{Tcolors.ENDC}\n")
     run_client(client_socket, sys.argv[1])
 
     client_socket.close()
