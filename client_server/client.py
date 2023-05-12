@@ -110,6 +110,7 @@ def run_client(client_sock, client_id):
     has_stopped = False
     has_started = False
     cipherkey = None
+    numbers = []
 
     while 1:
         option = input(f"Operation? (START, QUIT, NUMBER, STOP, GUESS)\n{Tcolors.BOLD}> {Tcolors.UNDERLINE}")
@@ -169,6 +170,7 @@ def run_client(client_sock, client_id):
                 client_sock.close()
                 continue
             # status = True
+            numbers.append(num)
             print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Number added with success{Tcolors.ENDC}\n")
 
         elif option.upper() == "STOP":
@@ -180,8 +182,12 @@ def run_client(client_sock, client_id):
                 print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't stop the game again{Tcolors.ENDC}")
                 continue
 
+            hasher = SHA256.new()
+            for number in numbers:
+                hasher.update(bytes(str(number), "utf8"))
+
             # send dict and receive response
-            senddata = {"op": "STOP"}
+            senddata = {"op": "STOP", "shasum": hasher.hexdigest()}
             recvdata = sendrecv_dict(client_sock, senddata)
 
             # status = False

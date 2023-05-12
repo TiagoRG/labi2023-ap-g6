@@ -1,1 +1,2 @@
 client_id,number_of_numbers,guess
+test,5,"['min', 'first']"

@@ -256,17 +256,25 @@ def stop_client(client_sock, request):
         response = {"op": "STOP", "status": False, "error": "Client has not yet sent any number"}
         print("Failed to stop client %s\nReason: %s" % (client_id, response["error"]))
     else:
-        value, solution = generate_result(users[client_id]["numbers"])
-        if users[client_id]["cipher"] is not None:
-            encripted_value = encrypt_intvalue(client_id, value)
-        else:
-            encripted_value = value
+        hasher = SHA256.new()
+        for number in users[client_id]["numbers"]:
+            hasher.update(bytes(str(number), "utf8"))
 
-        update_file(client_id, len(users[client_id]["numbers"]), solution)
-        response = {"op": "STOP", "status": True, "value": encripted_value}
-        users[client_id]["solution"] = solution
-        users[client_id]["hasStopped"] = True
-        print("Client %s stopped\nChosen number: %d\nSolution: %s" % (client_id, value, solution))
+        if hasher.hexdigest() != request["shasum"]:
+            response = {"op": "STOP", "status": False, "error": "Server numbers list synthesis doesn't match with client list"}
+            print("Failed to stop client %s\nReason: %s" % (client_id, response["error"]))
+        else:
+            value, solution = generate_result(users[client_id]["numbers"])
+            if users[client_id]["cipher"] is not None:
+                encripted_value = encrypt_intvalue(client_id, value)
+            else:
+                encripted_value = value
+
+            update_file(client_id, len(users[client_id]["numbers"]), solution)
+            response = {"op": "STOP", "status": True, "value": encripted_value}
+            users[client_id]["solution"] = solution
+            users[client_id]["hasStopped"] = True
+            print("Client %s stopped\nChosen number: %d\nSolution: %s" % (client_id, value, solution))
     return response
 
 
