@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-import hashlib
 import os
 import sys
 import socket
@@ -89,7 +88,7 @@ def quit_action(client_sock, has_started):
 def returnValidNum():
     while 1:
         try:
-            num = int(input(f"{Tcolors.ENDC}{Tcolors.BOLD}> {Tcolors.UNDERLINE}"))
+            num = int(input(f"\n{Tcolors.ENDC}{Tcolors.BOLD}Number > {Tcolors.UNDERLINE}"))
         except ValueError:
             print(f"{Tcolors.ENDC}{Tcolors.WARNING}Invalid input{Tcolors.ENDC}")
             continue
@@ -113,12 +112,12 @@ def run_client(client_sock, client_id):
     numbers = []
 
     while 1:
-        option = input(f"Operation? (START, QUIT, NUMBER, STOP, GUESS)\n{Tcolors.BOLD}> {Tcolors.UNDERLINE}")
+        option = input(f"{Tcolors.ENDC}\nOperation? (START, QUIT, NUMBER, STOP, GUESS)\n{Tcolors.BOLD}> {Tcolors.UNDERLINE}")
 
         # start option
         if option.upper() == "START":
             if has_started:
-                print(f"{Tcolors.ENDC}{Tcolors.WARNING}Client already started{Tcolors.ENDC}")
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}Client already started\n{Tcolors.ENDC}")
                 continue
 
             while 1:
@@ -148,7 +147,7 @@ def run_client(client_sock, client_id):
 
             # status = True
             has_started = True
-            print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Client added with success{Tcolors.ENDC}\n")
+            print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}\nClient added with success{Tcolors.ENDC}\n")
 
         elif option.upper() == "QUIT":
             quit_action(client_sock, has_started)
@@ -156,11 +155,11 @@ def run_client(client_sock, client_id):
 
         elif option.upper() == "NUMBER":
             if not has_started:
-                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You must start the game first{Tcolors.ENDC}")
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You must start the game first\n{Tcolors.ENDC}")
                 continue
 
             if has_stopped:
-                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't add more numbers{Tcolors.ENDC}")
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't add more numbers\n{Tcolors.ENDC}")
                 continue
             # verify if number is int
             num = returnValidNum()
@@ -181,11 +180,11 @@ def run_client(client_sock, client_id):
         elif option.upper() == "STOP":
             # check if client has started the game
             if not has_started:
-                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You must start the game first{Tcolors.ENDC}")
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You must start the game first\n{Tcolors.ENDC}")
                 continue
             # check if client has stopped adding numbers
             if has_stopped:
-                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't stop the game again{Tcolors.ENDC}")
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't stop the game again\n{Tcolors.ENDC}")
                 continue
 
             hasher = SHA256.new()
@@ -206,20 +205,21 @@ def run_client(client_sock, client_id):
                 data = decrypt_intvalue(cipherkey, data)
             has_stopped = True
             # status = True
-            print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Chosen number: {Tcolors.UNDERLINE}{data}{Tcolors.ENDC}\n")
+            print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}\nChosen number: {Tcolors.UNDERLINE}{data}{Tcolors.ENDC}\n")
 
         elif option.upper() == "GUESS":
             # check if client has started the game
             if not has_started:
-                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You must start the game first{Tcolors.ENDC}")
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You must start the game first\n{Tcolors.ENDC}")
                 continue
             # check if client has stopped adding numbers
             if not has_stopped:
-                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't guess before stopping the game{Tcolors.ENDC}")
+                print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't guess before stopping the game\n{Tcolors.ENDC}")
                 continue
 
             # print the possible choices
-            print(f"""{Tcolors.ENDC}Choose one of the following options:
+            print(f"""
+{Tcolors.ENDC}Choose one of the following options:
 1 - first
 2 - last
 3 - min
@@ -230,10 +230,11 @@ def run_client(client_sock, client_id):
 8 - min, last
 9 - max, last
 10 - median, first
-11 - median, last""")
+11 - median, last
+""")
             while True:
                 try:
-                    choice_num = int(input(f"{Tcolors.BOLD}> {Tcolors.UNDERLINE}"))
+                    choice_num = int(input(f"{Tcolors.BOLD}\n> {Tcolors.UNDERLINE}"))
                     if choice_num == 1:
                         choice = ["first"]
                     elif choice_num == 2:
@@ -257,10 +258,11 @@ def run_client(client_sock, client_id):
                     elif choice_num == 11:
                         choice = ["median", "last"]
                     else:
-                        print(f"{Tcolors.WARNING}Invalid input{Tcolors.ENDC}")
+                        print(f"{Tcolors.ENDC}{Tcolors.WARNING}Invalid input{Tcolors.ENDC}")
                         continue
                     break
                 except ValueError:
+                    print(f"{Tcolors.ENDC}{Tcolors.WARNING}Invalid input{Tcolors.ENDC}")
                     continue
 
             # send dict and receive response
@@ -273,8 +275,12 @@ def run_client(client_sock, client_id):
                 continue
 
             # status = True
-            print(f"\n{Tcolors.ENDC}{Tcolors.BOLD}{Tcolors.UNDERLINE}{Tcolors.OKBLUE}" + ("You are right!" if recvdata["result"] else "You are wrong!") + f"{Tcolors.ENDC}\n")
+            print(f"\n\n{Tcolors.ENDC}{Tcolors.BOLD}{Tcolors.OKBLUE}{'='*15}\n\n{Tcolors.UNDERLINE}{Tcolors.OKCYAN}"
+                  + ("You are right!" if recvdata["result"] else "You are wrong!")
+                  + f"{Tcolors.ENDC}{Tcolors.BOLD}{Tcolors.OKBLUE}\n\n{'='*15}{Tcolors.ENDC}\n\n")
             quit_action(client_sock, has_started)
+        else:
+            print(f"{Tcolors.ENDC}{Tcolors.WARNING}Invalid option!\n{Tcolors.ENDC}")
 
     return None
 
@@ -309,6 +315,7 @@ def main():
 
     # catch error message if server does not exist in those specifications
     try:
+        print(f"{Tcolors.WARNING}Connecting to {hostname}:{port}...{Tcolors.ENDC}")
         client_socket.connect((hostname, port))
     except ConnectionError:
         print(f"{Tcolors.FAIL}Error: connection to server failed{Tcolors.ENDC}")
@@ -317,6 +324,7 @@ def main():
         print(f"{Tcolors.FAIL}Error: no route to server{Tcolors.ENDC}")
         sys.exit(1)
 
+    print(f"{Tcolors.OKGREEN}Connected to {hostname}:{port} as client {sys.argv[1]}\n{Tcolors.ENDC}")
     run_client(client_socket, sys.argv[1])
 
     client_socket.close()

@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-import hashlib
 import sys
 import socket
 import select
@@ -162,7 +161,7 @@ def new_client(client_sock, request):
         if request["cipher"] is not None:
             cipher = request["cipher"]
 
-        users[client_id] = {"socket": client_sock, "cipher": cipher, "numbers": [], "hasStopped": False}
+        users[client_id] = {"socket": client_sock, "cipher": cipher, "numbers": [], "has_stopped": False}
         response = {"op": "START", "status": True}
         print("Client %s added\n" % client_id)
     return response
@@ -235,7 +234,7 @@ def number_client(client_sock, request):
         response = {"op": "NUMBER", "status": False, "error": "Client does not exist"}
         print("Failed to add number to client %s\nReason: %s" % (client_id, response["error"]))
     # check if client has stopped adding numbers
-    elif users[client_id]["hasStopped"]:
+    elif users[client_id]["has_stopped"]:
         response = {"op": "NUMBER", "status": False, "error": "Client has stopped"}
         print("Failed to add number to client %s\nReason: %s" % (client_id, response["error"]))
     else:
@@ -280,7 +279,7 @@ def stop_client(client_sock, request):
             update_file(client_id, len(users[client_id]["numbers"]), solution)
             response = {"op": "STOP", "status": True, "value": encripted_value}
             users[client_id]["solution"] = solution
-            users[client_id]["hasStopped"] = True
+            users[client_id]["has_stopped"] = True
             print("Client %s stopped\nChosen number: %d\nSolution: %s" % (client_id, value, solution))
     return response
 
@@ -297,7 +296,7 @@ def guess_client(client_sock, request):
     if client_id is None:
         response = {"op": "GUESS", "status": False, "error": "Client does not exist"}
         print("Failed to guess client %s\nReason: %s" % (client_id, response["error"]))
-    elif not users[client_id]["hasStopped"]:
+    elif not users[client_id]["has_stopped"]:
         response = {"op": "GUESS", "status": False, "error": "Client has not yet stopped"}
         print("Failed to guess client %s\nReason: %s" % (client_id, response["error"]))
     else:
