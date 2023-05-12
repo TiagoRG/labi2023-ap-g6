@@ -24,12 +24,6 @@ def find_client_id(client_sock):
     return None
 
 
-def pad(data):
-    pad_len = 16 - (len(str(data)) % 16)
-    padding = bytes([pad_len] * pad_len)
-    return str(data) + str(padding)
-
-
 # Função para encriptar valores a enviar em formato json com codificação base64
 # return int data encrypted in a 16 bytes binary string and coded base64
 def encrypt_intvalue(client_id, data_arg):
@@ -142,7 +136,7 @@ def new_msg(client_sock):
     elif op == "GUESS":  #
         response = guess_client(client_sock, request)
     else:
-        response = {"op": op, "status": False, "error": "Operação inexistente"}
+        response = {"op": op, "status": False, "error": "Invalid operation"}
 
     # print (response)
     send_dict(client_sock, response)
@@ -208,7 +202,7 @@ def quit_client(client_sock, request):
 
 
 #
-# Suporte da criação de um ficheiro csv com o respectivo cabeçalho - já está implementada
+# Suporte da criação de um ficheiro csv com o respetivo cabeçalho - já está implementada
 #
 def create_file():
     with open("result.csv", "w", newline="") as csvfile:
@@ -323,8 +317,11 @@ def main():
         print("Port must be in range 1024-65535")
         sys.exit(1)
 
+    hostname = socket.gethostbyname(socket.gethostname())
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((socket.gethostbyname(socket.gethostname()), port))
+    server_socket.bind((hostname, port))
+    print(f"Server started.\nHostname: {hostname}\nPort: {port}\n-----------------------------------------------------\n")
+
     server_socket.listen()
 
     clients = []

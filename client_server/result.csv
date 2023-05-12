@@ -1,4 +1,1 @@
 client_id,number_of_numbers,guess
-test,4,"['max', 'last']"
-test,4,['last']
-test,5,['median']
