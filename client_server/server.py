@@ -152,11 +152,13 @@ def new_msg(client_sock):
 def new_client(client_sock, request):
     client_id = request["client_id"]
 
+    # check if the client_id is in users
     if client_id in users:
         response = {"op": "START", "status": False, "error": "Client already exists"}
         print("Failed to add client %s\nReason: %s" % (client_id, response["error"]))
     else:
         cipher = None
+        # verify if client wants to use cipher
         if request["cipher"] is not None:
             cipher = request["cipher"]
 
@@ -172,6 +174,7 @@ def new_client(client_sock, request):
 # obtain the client_id from his socket and delete from the dictionary
 def clean_client(client_sock):
     client_id = find_client_id(client_sock)
+    # check if the client_id is in users
     if client_id is not None:
         print("Client %s removed\n" % client_id)
         del users[client_id]
@@ -187,10 +190,12 @@ def clean_client(client_sock):
 # return response message with or without error message
 def quit_client(client_sock, request):
     client_id = find_client_id(client_sock)
+    # check if the client_id is in users
     if client_id is None:
         response = {"op": "QUIT", "status": False, "error": "Client does not exist"}
         print("Failed to remove client %s\nReason: %s" % (client_id, response["error"]))
     else:
+        # remove client
         clean_client(client_sock)
         response = {"op": "QUIT", "status": True}
     return response
@@ -225,9 +230,11 @@ def update_file(client_id, size, guess):
 # return response message with or without error message
 def number_client(client_sock, request):
     client_id = find_client_id(client_sock)
+    # check if the client_id is in users
     if client_id is None:
         response = {"op": "NUMBER", "status": False, "error": "Client does not exist"}
         print("Failed to add number to client %s\nReason: %s" % (client_id, response["error"]))
+    # check if client has stopped adding numbers
     elif users[client_id]["hasStopped"]:
         response = {"op": "NUMBER", "status": False, "error": "Client has stopped"}
         print("Failed to add number to client %s\nReason: %s" % (client_id, response["error"]))

@@ -114,19 +114,24 @@ def run_client(client_sock, client_id):
     while 1:
         option = input(f"Operation? (START, QUIT, NUMBER, STOP, GUESS)\n{Tcolors.BOLD}> {Tcolors.UNDERLINE}")
 
+        # start option
         if option.upper() == "START":
             if has_started:
                 print(f"{Tcolors.ENDC}{Tcolors.WARNING}Client already started{Tcolors.ENDC}")
                 continue
 
             while 1:
+                # ask user if cipher is needed
                 choice = input(f"\n{Tcolors.ENDC}Do you wish to use a cipher? {Tcolors.BOLD}(Y/N)\n> {Tcolors.UNDERLINE}")
                 if choice.upper() == "Y":
+                    # create cipher key for server
                     cipherkey = base64.b64encode(os.urandom(16)).decode()
                     break
                 elif choice.upper() == "N":
+                    # do nothing since cipher will be None
                     break
                 else:
+                    # loop if invalid option
                     print(f"{Tcolors.ENDC}{Tcolors.WARNING}Invalid input{Tcolors.ENDC}")
                     continue
 
@@ -172,10 +177,11 @@ def run_client(client_sock, client_id):
             print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Number added with success{Tcolors.ENDC}\n")
 
         elif option.upper() == "STOP":
+            # check if client has started the game
             if not has_started:
                 print(f"{Tcolors.ENDC}{Tcolors.WARNING}You must start the game first{Tcolors.ENDC}")
                 continue
-
+            # check if client has stopped adding numbers
             if has_stopped:
                 print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't stop the game again{Tcolors.ENDC}")
                 continue
@@ -188,20 +194,20 @@ def run_client(client_sock, client_id):
             if not recvdata["status"]:
                 print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
                 continue
-            # decipher data
+            # decipher data if using encryption
             data = recvdata["value"]
             if cipherkey is not None:
                 data = decrypt_intvalue(cipherkey, data)
-
             has_stopped = True
             # status = True
             print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Chosen number: {Tcolors.UNDERLINE}{data}{Tcolors.ENDC}\n")
 
         elif option.upper() == "GUESS":
+            # check if client has started the game
             if not has_started:
                 print(f"{Tcolors.ENDC}{Tcolors.WARNING}You must start the game first{Tcolors.ENDC}")
                 continue
-
+            # check if client has stopped adding numbers
             if not has_stopped:
                 print(f"{Tcolors.ENDC}{Tcolors.WARNING}You can't guess before stopping the game{Tcolors.ENDC}")
                 continue
@@ -277,19 +283,25 @@ def main():
     try:
         port = int(sys.argv[2])
         hostname = [comp for comp in sys.argv[3].split(".") if 0 <= int(comp) <= 255] if len(sys.argv) == 4 else socket.gethostbyname(socket.gethostname()).split(".")
+        # check if ip is valid
         if len(hostname) != 4:
             print(f"{Tcolors.WARNING}Invalid ip{Tcolors.ENDC}")
             sys.exit(1)
         hostname = ".".join(hostname)
+    # catch ValueError of hostname
     except ValueError:
         print(f"{Tcolors.WARNING}Invalid ip{Tcolors.ENDC}")
         sys.exit(1)
+        
+    # check if indicated port is valid
     if not verifyPort(port):
         print(f"{Tcolors.WARNING}Port must be between 1024 and 65535{Tcolors.ENDC}")
         sys.exit(1)
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.bind(("0.0.0.0", 0))
+
+    # catch error message if server does not exist in those specifications
     try:
         client_socket.connect((hostname, port))
     except ConnectionError:
