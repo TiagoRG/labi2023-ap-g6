@@ -313,14 +313,21 @@ def main():
         print("Port must be an integer")
         sys.exit(1)
 
+    # verify if the port number is in the appropriate range and eventually print error message and exit with error
     if port < 1024 or port > 65535:
         print("Port must be in range 1024-65535")
         sys.exit(1)
 
-    hostname = socket.gethostbyname(socket.gethostname())
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((hostname, port))
-    print(f"Server started.\nHostname: {hostname}\nPort: {port}\n-----------------------------------------------------\n")
+    # create the server socket
+    try:
+        hostname = socket.gethostbyname(socket.gethostname())
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.bind((hostname, port))
+        print(f"Server started.\nHostname: {hostname}\nPort: {port}\n-----------------------------------------------------\n")
+    # handle errors while creating server socket and exit with error
+    except OSError:
+        print(f"Failed to create server socket, maybe the port is already in use?\n")
+        sys.exit(1)
 
     server_socket.listen()
 
