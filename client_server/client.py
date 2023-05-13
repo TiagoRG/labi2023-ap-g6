@@ -56,11 +56,17 @@ def quit_action(client_sock, has_started):
         senddata = {"op": "QUIT"}
         recvdata = sendrecv_dict(client_sock, senddata)
 
-        # status = False
-        if not recvdata["status"]:
-            print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
-            return
-
+        try:
+            # status = False
+            if not recvdata["status"]:
+                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
+                return
+        except TypeError:
+            print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: an error occurred with the server.{Tcolors.ENDC}")
+            print(f"{Tcolors.ENDC}{Tcolors.WARNING}Client not removed from server, quitting...{Tcolors.ENDC}")
+            client_sock.close()
+            exit(1)
+            
     # status = True
     print(f"{Tcolors.OKGREEN}Client quit with success")
     client_sock.close()
@@ -156,8 +162,15 @@ def run_client(client_sock, client_id):
             senddata = {"op": "START", "client_id": client_id, "cipher": cipherkey}
             recvdata = sendrecv_dict(client_sock, senddata)
 
-            if not recvdata["status"]:
-                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
+            try:
+                # status = False
+                if not recvdata["status"]:
+                    print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
+                    print(f"{Tcolors.ENDC}{Tcolors.WARNING}Client not added, quitting...{Tcolors.ENDC}")
+                    client_sock.close()
+                    exit(1)
+            except TypeError:
+                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: an error occurred with the server, try again later{Tcolors.ENDC}")
                 print(f"{Tcolors.ENDC}{Tcolors.WARNING}Client not added, quitting...{Tcolors.ENDC}")
                 client_sock.close()
                 exit(1)
@@ -191,14 +204,22 @@ def run_client(client_sock, client_id):
             senddata = {"op": "NUMBER", "number": encrypted_num}
             recvdata = sendrecv_dict(client_sock, senddata)
 
-            # status = False
-            if not recvdata["status"]:
-                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
+            try:
+                # status = False
+                if not recvdata["status"]:
+                    print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
+                    client_sock.close()
+                    continue
+                # status = True
+                numbers.append(num)
+                print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Number added with success{Tcolors.ENDC}\n")
+            except TypeError:
+                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: an error occurred with the server\nSocket has been closed, try to start again{Tcolors.ENDC}")
                 client_sock.close()
+                has_started = False
+                cipherkey = None
+                numbers = []
                 continue
-            # status = True
-            numbers.append(num)
-            print(f"{Tcolors.ENDC}{Tcolors.OKGREEN}Number added with success{Tcolors.ENDC}\n")
 
         elif option.upper() == "STOP":
             # check if client has started the game
@@ -219,9 +240,17 @@ def run_client(client_sock, client_id):
             senddata = {"op": "STOP", "shasum": hasher.hexdigest()}
             recvdata = sendrecv_dict(client_sock, senddata)
 
-            # status = False
-            if not recvdata["status"]:
-                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
+            try:
+                # status = False
+                if not recvdata["status"]:
+                    print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
+                    continue
+            except TypeError:
+                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: an error occurred with the server\nSocket has been closed, try to start again{Tcolors.ENDC}")
+                client_sock.close()
+                has_started = False
+                cipherkey = None
+                numbers = []
                 continue
 
             # decipher data if using encryption
@@ -294,9 +323,17 @@ def run_client(client_sock, client_id):
             senddata = {"op": "GUESS", "choice": choice}
             recvdata = sendrecv_dict(client_sock, senddata)
 
-            # status = False
-            if not recvdata["status"]:
-                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
+            try:
+                # status = False
+                if not recvdata["status"]:
+                    print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: {recvdata['error']}{Tcolors.ENDC}")
+                    continue
+            except TypeError:
+                print(f"{Tcolors.ENDC}{Tcolors.FAIL}Error: an error occurred with the server\nSocket has been closed, try to start again{Tcolors.ENDC}")
+                client_sock.close()
+                has_started = False
+                cipherkey = None
+                numbers = []
                 continue
 
             # status = True
