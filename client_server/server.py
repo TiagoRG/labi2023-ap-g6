@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-import hashlib
 import sys
 import socket
 import select
@@ -35,16 +34,12 @@ def encrypt_intvalue(client_id, data_arg):
 
 # Função para desencriptar valores recebidos em formato json com codificação base64
 # return int data decrypted from a 16 bytes binary string and coded base64
-def decrypt_intvalue(client_id, data):
-    cipher = users[client_id]["cipher"]
-    decrypt = base64.b64decode(data)
-    decrypt = cipher.decrypt(decrypt)
-
-    try:
-        decrypt = int(str(decrypt, "utf8"))
-    except ValueError:
-        return "Error"
-    return decrypt
+def decrypt_intvalue(client_id, data_arg):
+    key = base64.b64decode(users[client_id]["cipher"])
+    cipher = AES.new(key, AES.MODE_ECB)
+    data = base64.b64decode(data_arg)
+    data = cipher.decrypt(data)
+    return int(str(data, "utf8"))
 
 
 # Função auxiliar para gerar o resultado - já está implementada
@@ -162,7 +157,7 @@ def new_client(client_sock, request):
         if request["cipher"] is not None:
             cipher = request["cipher"]
 
-        users[client_id] = {"socket": client_sock, "cipher": cipher, "numbers": [], "hasStopped": False}
+        users[client_id] = {"socket": client_sock, "cipher": cipher, "numbers": [], "has_stopped": False}
         response = {"op": "START", "status": True}
         print("Client %s added\n" % client_id)
     return response
@@ -235,11 +230,15 @@ def number_client(client_sock, request):
         response = {"op": "NUMBER", "status": False, "error": "Client does not exist"}
         print("Failed to add number to client %s\nReason: %s" % (client_id, response["error"]))
     # check if client has stopped adding numbers
-    elif users[client_id]["hasStopped"]:
+    elif users[client_id]["has_stopped"]:
         response = {"op": "NUMBER", "status": False, "error": "Client has stopped"}
         print("Failed to add number to client %s\nReason: %s" % (client_id, response["error"]))
     else:
         num = request["number"]
+        # decrypt the number if a cipher is being used
+        if users[client_id]["cipher"] is not None:
+            num = decrypt_intvalue(client_id, num)
+
         users[client_id]["numbers"].append(num)
         response = {"op": "NUMBER", "status": True}
         print("Number %d added to client %s\n" % (num, client_id))
@@ -263,17 +262,29 @@ def stop_client(client_sock, request):
         response = {"op": "STOP", "status": False, "error": "Client has not yet sent any number"}
         print("Failed to stop client %s\nReason: %s" % (client_id, response["error"]))
     else:
-        value, solution = generate_result(users[client_id]["numbers"])
-        if users[client_id]["cipher"] is not None:
-            encripted_value = encrypt_intvalue(client_id, value)
-        else:
-            encripted_value = value
+        # creates the synthesis for the list
+        hasher = SHA256.new()
+        for number in users[client_id]["numbers"]:
+            hasher.update(bytes(str(number), "utf8"))
 
-        update_file(client_id, len(users[client_id]["numbers"]), solution)
-        response = {"op": "STOP", "status": True, "value": encripted_value}
-        users[client_id]["solution"] = solution
-        users[client_id]["hasStopped"] = True
-        print("Client %s stopped\nChosen number: %d\nSolution: %s" % (client_id, value, solution))
+        # compares the synthesis of the server and the client to see if they match
+        if hasher.hexdigest() != request["shasum"]:
+            response = {"op": "STOP", "status": False, "error": "Server numbers list synthesis doesn't match with client list"}
+            print("Failed to stop client %s\nReason: %s" % (client_id, response["error"]))
+        else:
+            # generates the result
+            value, solution = generate_result(users[client_id]["numbers"])
+            # encrypts the value if a cipher is being used
+            if users[client_id]["cipher"] is not None:
+                encripted_value = encrypt_intvalue(client_id, value)
+            else:
+                encripted_value = value
+
+            update_file(client_id, len(users[client_id]["numbers"]), solution)
+            response = {"op": "STOP", "status": True, "value": encripted_value}
+            users[client_id]["solution"] = solution
+            users[client_id]["has_stopped"] = True
+            print("Client %s stopped\nChosen number: %d\nSolution: %s" % (client_id, value, solution))
     return response
 
 
@@ -289,7 +300,7 @@ def guess_client(client_sock, request):
     if client_id is None:
         response = {"op": "GUESS", "status": False, "error": "Client does not exist"}
         print("Failed to guess client %s\nReason: %s" % (client_id, response["error"]))
-    elif not users[client_id]["hasStopped"]:
+    elif not users[client_id]["has_stopped"]:
         response = {"op": "GUESS", "status": False, "error": "Client has not yet stopped"}
         print("Failed to guess client %s\nReason: %s" % (client_id, response["error"]))
     else:
