@@ -304,11 +304,8 @@ def main():
     # catch error message if server does not exist in those specifications
     try:
         client_socket.connect((hostname, port))
-    except ConnectionError:
-        print(f"{Tcolors.FAIL}Error: connection to server failed{Tcolors.ENDC}")
-        sys.exit(1)
     except OSError:
-        print(f"{Tcolors.FAIL}Error: no route to server{Tcolors.ENDC}")
+        print(f"{Tcolors.FAIL}Error: connection to server failed{Tcolors.ENDC}")
         sys.exit(1)
 
     run_client(client_socket, sys.argv[1])
