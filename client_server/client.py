@@ -118,7 +118,7 @@ def verify_port(port):
 
 # verify if hostname is valid
 def verify_hostname(hostname):
-    if not (re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', hostname) and all(0 <= int(n) <= 256 for n in hostname.split('.'))):
+    if not (re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', hostname) and all(0 <= int(n) < 256 for n in hostname.split('.'))):
         print(f"{Tcolors.WARNING}Invalid DNS address{Tcolors.ENDC}")
         sys.exit(1)
     return hostname
@@ -368,11 +368,8 @@ def main():
     print(f"{Tcolors.WARNING}Connecting to {Tcolors.UNDERLINE}{hostname}:{port}{Tcolors.ENDC}{Tcolors.WARNING}...{Tcolors.ENDC}")
     try:
         client_socket.connect((hostname, port))
-    except ConnectionError:
-        print(f"{Tcolors.FAIL}Error: connection to server failed{Tcolors.ENDC}")
-        sys.exit(1)
     except OSError:
-        print(f"{Tcolors.FAIL}Error: no route to server{Tcolors.ENDC}")
+        print(f"{Tcolors.FAIL}Error: connection to server failed{Tcolors.ENDC}")
         sys.exit(1)
 
     # send confirmation about the connection
