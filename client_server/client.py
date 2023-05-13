@@ -107,21 +107,20 @@ def returnValidNum():
 def verify_port(port):
     # verify if port is a number
     if not port.isdigit():
-        print(f"{Tcolors.WARNING}Invalid port format{Tcolors.ENDC}")
-        sys.exit(1)
+        return {"status": False, "error": "Port must be an integer"}
     # verify if port is between 1024 and 65535
     if not (1024 <= int(port) <= 65535):
-        print(f"{Tcolors.WARNING}Port number must be between 1024 and 65535{Tcolors.ENDC}")
-        sys.exit(1)
-    return int(port)
+        return {"status": False, "error": "Port number must be between 1024 and 65535"}
+    return {"status": True, "port": int(port)}
 
 
 # verify if hostname is valid
 def verify_hostname(hostname):
+    if hostname == "localhost":
+        return {"status": True}
     if not (re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', hostname) and all(0 <= int(n) < 256 for n in hostname.split('.'))):
-        print(f"{Tcolors.WARNING}Invalid DNS address{Tcolors.ENDC}")
-        sys.exit(1)
-    return hostname
+        return {"status": False, "error": "Invalid DNS address"}
+    return {"status": True}
 
 
 def run_client(client_sock, client_id):
@@ -355,10 +354,19 @@ def main():
         sys.exit(1)
 
     # check if indicated port is valid and get its value
-    port = verify_port(sys.argv[2])
+    port = sys.argv[2]
+    verified = verify_port(port)
+    if not verified["status"]:
+        print(f"{Tcolors.WARNING}{verified['error']}{Tcolors.ENDC}")
+        sys.exit(1)
+    port = verified["port"]
 
     # get the ip address of the DNS and get its value
-    hostname = verify_hostname(sys.argv[3]) if len(sys.argv) == 4 else socket.gethostbyname(socket.gethostname())
+    hostname = sys.argv[3] if len(sys.argv) == 4 else socket.gethostbyname(socket.gethostname())
+    verified = verify_hostname(hostname)
+    if not verified["status"]:
+        print(f"{Tcolors.WARNING}{verified['error']}{Tcolors.ENDC}")
+        sys.exit(1)
 
     # create the socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

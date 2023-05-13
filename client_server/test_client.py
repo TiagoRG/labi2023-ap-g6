@@ -47,6 +47,11 @@ def test_invalid_port():
     output = proc.stdout.read().decode("utf-8")
 
     assert output == f"{Tcolors.WARNING}Port number must be between 1024 and 65535{Tcolors.ENDC}\n"
+
+    proc = Popen("python3 client.py test test", stdout=PIPE, shell=True)
+    output = proc.stdout.read().decode("utf-8")
+
+    assert output == f"{Tcolors.WARNING}Port must be an integer{Tcolors.ENDC}\n"
     # end of testing invalid port
 
 

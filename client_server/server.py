@@ -310,6 +310,16 @@ def guess_client(client_sock, request):
     return response
 
 
+def verify_port(port):
+    # verify if port is a number
+    if not port.isdigit():
+        return {"status": False, "error": "Port must be an integer"}
+    # verify if port is between 1024 and 65535
+    if not (1024 <= int(port) <= 65535):
+        return {"status": False, "error": "Port number must be between 1024 and 65535"}
+    return {"status": True, "port": int(port)}
+
+
 def main():
     # validate the number of arguments and eventually print error message and exit with error
     # verify type of arguments and eventually print error message and exit with error
@@ -318,16 +328,12 @@ def main():
         sys.exit(1)
 
     # obtain the port number
-    try:
-        port = int(sys.argv[1])
-    except ValueError:
-        print("Port must be an integer")
+    port = sys.argv[1]
+    verified = verify_port(port)
+    if not verified["status"]:
+        print(f"{verified['error']}")
         sys.exit(1)
-
-    # verify if the port number is in the appropriate range and eventually print error message and exit with error
-    if port < 1024 or port > 65535:
-        print("Port must be in range 1024-65535")
-        sys.exit(1)
+    port = verified["port"]
 
     # create the server socket
     try:
