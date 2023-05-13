@@ -331,11 +331,8 @@ def main():
     print(f"{Tcolors.WARNING}Connecting to {Tcolors.UNDERLINE}{hostname}:{port}{Tcolors.ENDC}{Tcolors.WARNING}...{Tcolors.ENDC}")
     try:
         client_socket.connect((hostname, port))
-    except ConnectionError:
-        print(f"{Tcolors.FAIL}Error: connection to server failed{Tcolors.ENDC}")
-        sys.exit(1)
     except OSError:
-        print(f"{Tcolors.FAIL}Error: no route to server{Tcolors.ENDC}")
+        print(f"{Tcolors.FAIL}Error: connection to server failed{Tcolors.ENDC}")
         sys.exit(1)
 
     # send confirmation about the connection
