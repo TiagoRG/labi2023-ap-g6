@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import os
+import re
 import sys
 import socket
 import json
@@ -97,8 +98,24 @@ def returnValidNum():
 
 
 # verify if port is valid
-def verifyPort(port):
-    return 1024 <= port <= 65535
+def verify_port(port):
+    # verify if port is a number
+    if not port.isdigit():
+        print(f"{Tcolors.WARNING}Invalid port format{Tcolors.ENDC}")
+        sys.exit(1)
+    # verify if port is between 1024 and 65535
+    if not (1024 <= int(port) <= 65535):
+        print(f"{Tcolors.WARNING}Port number must be between 1024 and 65535{Tcolors.ENDC}")
+        sys.exit(1)
+    return int(port)
+
+
+# verify if hostname is valid
+def verify_hostname(hostname):
+    if not (re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', hostname) and all(0 <= int(n) <= 256 for n in hostname.split('.'))):
+        print(f"{Tcolors.WARNING}Invalid DNS address{Tcolors.ENDC}")
+        sys.exit(1)
+    return hostname
 
 
 def run_client(client_sock, client_id):
@@ -300,30 +317,19 @@ def main():
         print(f"{Tcolors.WARNING}Usage: python3 client.py client_id port DNS{Tcolors.ENDC}")
         sys.exit(1)
 
-    try:
-        port = int(sys.argv[2])
-        hostname = [comp for comp in sys.argv[3].split(".") if 0 <= int(comp) <= 255] if len(sys.argv) == 4 else socket.gethostbyname(socket.gethostname()).split(".")
-        # check if ip is valid
-        if len(hostname) != 4:
-            print(f"{Tcolors.WARNING}Invalid ip{Tcolors.ENDC}")
-            sys.exit(1)
-        hostname = ".".join(hostname)
-    # catch ValueError of hostname
-    except ValueError:
-        print(f"{Tcolors.WARNING}Invalid ip{Tcolors.ENDC}")
-        sys.exit(1)
-        
-    # check if indicated port is valid
-    if not verifyPort(port):
-        print(f"{Tcolors.WARNING}Port must be between 1024 and 65535{Tcolors.ENDC}")
-        sys.exit(1)
+    # check if indicated port is valid and get its value
+    port = verify_port(sys.argv[2])
 
+    # get the ip address of the DNS and get its value
+    hostname = verify_hostname(sys.argv[3]) if len(sys.argv) == 4 else socket.gethostbyname(socket.gethostname())
+
+    # create the socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.bind(("0.0.0.0", 0))
 
     # catch error message if server does not exist in those specifications
+    print(f"{Tcolors.WARNING}Connecting to {Tcolors.UNDERLINE}{hostname}:{port}{Tcolors.ENDC}{Tcolors.WARNING}...{Tcolors.ENDC}")
     try:
-        print(f"{Tcolors.WARNING}Connecting to {hostname}:{port}...{Tcolors.ENDC}")
         client_socket.connect((hostname, port))
     except ConnectionError:
         print(f"{Tcolors.FAIL}Error: connection to server failed{Tcolors.ENDC}")
@@ -332,7 +338,10 @@ def main():
         print(f"{Tcolors.FAIL}Error: no route to server{Tcolors.ENDC}")
         sys.exit(1)
 
-    print(f"{Tcolors.OKGREEN}Connected to {hostname}:{port} as client {sys.argv[1]}\n{Tcolors.ENDC}")
+    # send confirmation about the connection
+    print(f"{Tcolors.OKGREEN}Connected to {Tcolors.UNDERLINE}{hostname}:{port}{Tcolors.ENDC}{Tcolors.OKGREEN} as client {Tcolors.UNDERLINE}{sys.argv[1]}\n{Tcolors.ENDC}")
+
+    # run the client
     run_client(client_socket, sys.argv[1])
 
     client_socket.close()
