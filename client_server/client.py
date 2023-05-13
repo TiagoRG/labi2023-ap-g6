@@ -107,7 +107,7 @@ def returnValidNum():
 def verify_port(port):
     # verify if port is a number
     if not port.isdigit():
-        return {"status": False, "error": "Invalid port format"}
+        return {"status": False, "error": "Port must be an integer"}
     # verify if port is between 1024 and 65535
     if not (1024 <= int(port) <= 65535):
         return {"status": False, "error": "Port number must be between 1024 and 65535"}
@@ -362,9 +362,9 @@ def main():
     port = verified["port"]
 
     # get the ip address of the DNS and get its value
-    hostname = verify_hostname(sys.argv[3]) if len(sys.argv) == 4 else socket.gethostbyname(socket.gethostname())
+    hostname = sys.argv[3] if len(sys.argv) == 4 else socket.gethostbyname(socket.gethostname())
     verified = verify_hostname(hostname)
-    if verified["status"]:
+    if not verified["status"]:
         print(f"{Tcolors.WARNING}{verified['error']}{Tcolors.ENDC}")
         sys.exit(1)
 

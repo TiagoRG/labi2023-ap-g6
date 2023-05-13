@@ -328,7 +328,7 @@ def main():
         sys.exit(1)
 
     # obtain the port number
-    port = sys.argv[2]
+    port = sys.argv[1]
     verified = verify_port(port)
     if not verified["status"]:
         print(f"{verified['error']}")
